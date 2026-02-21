@@ -6,3 +6,4 @@ venv/
 *.pdf
 state.json
 .DS_Store
+.env
