@@ -49,6 +49,13 @@ async def _run(config: Settings):
         
     console.print(f"[bold]Total Chapters:[/bold] {state.total_chapters}")
     
+    console.print(f"[bold blue]Starting chapter downloads...[/bold blue]")
+    from .chapter_downloader import ChapterDownloader
+    downloader = ChapterDownloader(page=page, state=state, output_dir=config.output_dir)
+    await downloader.download_all()
+    
+    console.print(f"[bold green]All chapters downloaded successfully![/bold green]")
+    
     # We will close the page/browser to be clean if needed, or leave it for the next task
     await page.context.browser.close()
 
