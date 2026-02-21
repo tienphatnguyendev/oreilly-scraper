@@ -8,3 +8,6 @@ state.json
 .DS_Store
 .env
 .worktrees/
+build/
+output/
+
