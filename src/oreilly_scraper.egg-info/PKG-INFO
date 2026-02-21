@@ -1,0 +1,24 @@
+Metadata-Version: 2.4
+Name: oreilly-scraper
+Version: 0.1.0
+Summary: O'Reilly PDF Downloader
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: playwright>=1.40.0
+Requires-Dist: playwright-stealth>=1.0.6
+Requires-Dist: pypdf>=4.0.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: pydantic>=2.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0.0; extra == "dev"
+
+# O'Reilly PDF Downloader
+
+A locally-run Python tool designed to download books from O'Reilly Learning as high-quality, single PDF files with formatting preserved.
+
+## Setup
+
+1. Check out the python environment.
+2. Provide `config.json` with the target `book_url` and valid `.oreilly.com` cookies.
+3. Run `oreilly-scraper`
