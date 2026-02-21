@@ -15,6 +15,13 @@ def main():
     console.print("[bold green]O'Reilly PDF Downloader[/bold green] initializing...")
     try:
         config: Settings = load_config()
+        # Extract book slug from URL (e.g. /library/view/building-applications-with/978.../)
+        parts = [p for p in config.book_url.path.split("/") if p]
+        book_slug = parts[-2] if len(parts) >= 2 else "book"
+        
+        # Append book slug to the output directory
+        config.output_dir = config.output_dir / book_slug
+        
         console.print(f"Loaded config for: [cyan]{config.book_url}[/cyan]")
         console.print(f"Cookies: [yellow]{len(config.cookies)} loaded[/yellow]")
         console.print(f"Output dir: [blue]{config.output_dir}[/blue]")

@@ -1,12 +1,162 @@
 {
-  "book_url": "https://learning.oreilly.com/library/view/book-title/book-id/",
+  "book_url": "https://learning.oreilly.com/library/view/building-applications-with/9781098176495/",
   "cookies": [
     {
-      "name": "cookie_name",
-      "value": "cookie_value",
+      "name": "akaalb_LearningALB",
+      "value": "~op=learning_oreilly_com_GCP_ALB:learning_oreilly_com_gcp1|~rv=79~m=learning_oreilly_com_gcp1:0|~os=3284f997983d0bd4e10a6b83f3b25a7c~id=a866c5a332bbb9f7e33e68a840790c8b",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_vwo_uuid_v2",
+      "value": "DE44DF967FCDEBD80A6E9611D9377255D|f46df1734c885e148ee6b08f1dfa6abc",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_ga",
+      "value": "GA1.1.1845947848.1771662627",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_rdt_uuid",
+      "value": "1771662627214.77f044ea-4b30-4fc7-b55b-9103acd1ebe2",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "IR_gbd",
+      "value": "oreilly.com",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "IR_15173",
+      "value": "1771662627212%7C3560754%7C1771662627212%7C%7C",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "IR_PI",
+      "value": "936d02a8-0eff-11f1-bfda-b9847e970c15%7C1771662627212",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_fbp",
+      "value": "fb.1.1771662628520.764986684497242074",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "orm-rt",
+      "value": "8d5ebdfabee3452d9b9476ac8f5ea725",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "csrftoken",
+      "value": "qN87Jdqn94sGi4CEEtKxPtHsIeqvCLlK",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "groot_sessionid",
+      "value": "m4q7cq2oa1rc7zkql6mbmvxcb6bjowuk",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "akaalb_LearningALB",
+      "value": "~op=learning_oreilly_com_GCP_ALB:learning_oreilly_com_gcp1|~rv=88~m=learning_oreilly_com_gcp1:0|~os=3284f997983d0bd4e10a6b83f3b25a7c~id=8d69a14e970b7117ef0ea68a7b087915",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_ga_092EL089CH",
+      "value": "GS2.1.s1771662627$o1$g1$t1771662641$j46$l0$h0",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "ak_bmsc",
+      "value": "4FD985DF542936EB4DF217376BA7908D~000000000000000000000000000000~YAAQIDXLFwy2T2icAQAAZCyNgB4MGfQ6rCS0FfsRATOFuqufyHugNPo1xVQeRnsTc0BNVmXVmb0wWwanfCTpibg6vWknIVq3AaKAumRWhgWKwDFJFJ5QpWfhk4oSc3TqW1c1LgZVpgKESHCVgOM2UNFWSsvBW1yKn7iHrslQ+GCNwskcFAb+7vsGcTilYKgmfUMUx5RNGe+LwUAka/WzfxNEsHU9Uf4DgdfEWD1sgDZHvScdXVKZAKeUQHY02DTKTCvQoWv3JglQsyoJPDZTwSDZJEUY8v2bYeaq5uy6i/y/FWMOnSb3HRyICi/ez9AS7NRkLsHxX2YtkiPAiGPqvSMXwm9d8so3nt95vnbZM5uXmWr+2t7ZsF3Xu2qs/mWKUCsZSFwHS3J+rQE71wThZG1+tX1aDSDGh+64",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "bm_ss",
+      "value": "ab8e18ef4e",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "orm-jwt",
+      "value": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImI1ZjliMGU1YzM1ZDRiY2NjYjY1YzZkOGQxYzQ2MWI5In0.eyJhY2N0cyI6WyI2YTc2NWRjNC0wNTczLTQ3ODctYTA0Mi0zZDY5OWQzZjE1NGMiXSwiZWlkcyI6eyJleGFjdHRhcmdldCI6InBsYXRmb3JtX3Byb2RfMjZiNjBlZWQtNTNkYS00NDQ4LWFlN2UtYWVhYmQ3NWRjY2RhIiwiaGVyb24iOiIyNmI2MGVlZC01M2RhLTQ0NDgtYWU3ZS1hZWFiZDc1ZGNjZGEifSwiZW52IjoicHJvZHVjdGlvbiIsImV4cCI6MTc3MTY4ODM0NCwiaW5kaXZpZHVhbCI6ZmFsc2UsInBlcm1zIjp7ImFwaWRjIjoidiIsImJldGEiOiJ2IiwiY25mcmMiOiJ2IiwiY3NzdGQiOiJ2IiwiZXB1YnMiOiJ2IiwiZ2VuYWkiOiJ2IiwibHJwdGgiOiJ2Iiwibm90ZSI6ImNldiIsIm9yaW9sIjoidiIsInBseWxzIjoiY2V2IiwicHJjaCI6InYiLCJ1c2FnZSI6ImMiLCJ1c3JwZiI6InYiLCJ2aWRlbyI6InYifSwic3ViIjoiMjZiNjBlZWQtNTNkYS00NDQ4LWFlN2UtYWVhYmQ3NWRjY2RhIn0.rhD1IOFI5IJwLYya5UboGoA3OHiuy0C9FZnhcmzbSuiPIGI4lVfkBkY5afsyZnCxUXgj0dAIDLQ7MHcb3rEJWF4Cwm042hLsOLYND5U-WguHKA3S2zBCmQgEN7EVK1rfDEm6bAWJ383fCpydF-lUwZqRHpM8JdqfxWmqB_J6MrM",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "bm_so",
+      "value": "5EA52B187DD7065C1ADB58BC59E83F47B16AADD1179EB3CFAE1EFB3025ECEA0A~YAAQI+TIF8KMMGecAQAAHg/NgAbYinc4etnsfGyUwXBKtCL/8MxIoYrXpxcnftxA3BaRaC08Cdiehh4EsHiu9LBGLImCJKW0gE/b9Z4EhdZ6sWZEm1pDQd6u1NzxL7z/q5s327MV1kRtphFifCp5sorNIDYPLfF4Wa5UCvaFlQOQK5pYhD0VkLb+BkPiR8F+jnTLGufZ++RpC/nUvdDx7O9lTuP9Sv0ttM3Rw52VHYB81/r6qv2hKCo+jLj0TI4mWOK0gNJqLt9EXdxWQV4nYAiSQ9lAcgSyMbkZCGTTQlfyoKWfak/S7JR1i8ujCBcVdpCjfWb4e+PSa2w0VWzd5YB0mtxHk+yUr4HbYQzuvJLASRp0Rj5zn6Yobe8EemKvJlks2jcj5PYO+95Mbp7iRiDOlI5vVSbm52xHsXveAWWRAQhmPyI+QSmaU/90CNElsVvzs/Y5rQblaftFZ+fl0qzVzMKMuAMQTKnHAdD9JmVO1jm/ML51LA==",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "bm_lso",
+      "value": "5EA52B187DD7065C1ADB58BC59E83F47B16AADD1179EB3CFAE1EFB3025ECEA0A~YAAQI+TIF8KMMGecAQAAHg/NgAbYinc4etnsfGyUwXBKtCL/8MxIoYrXpxcnftxA3BaRaC08Cdiehh4EsHiu9LBGLImCJKW0gE/b9Z4EhdZ6sWZEm1pDQd6u1NzxL7z/q5s327MV1kRtphFifCp5sorNIDYPLfF4Wa5UCvaFlQOQK5pYhD0VkLb+BkPiR8F+jnTLGufZ++RpC/nUvdDx7O9lTuP9Sv0ttM3Rw52VHYB81/r6qv2hKCo+jLj0TI4mWOK0gNJqLt9EXdxWQV4nYAiSQ9lAcgSyMbkZCGTTQlfyoKWfak/S7JR1i8ujCBcVdpCjfWb4e+PSa2w0VWzd5YB0mtxHk+yUr4HbYQzuvJLASRp0Rj5zn6Yobe8EemKvJlks2jcj5PYO+95Mbp7iRiDOlI5vVSbm52xHsXveAWWRAQhmPyI+QSmaU/90CNElsVvzs/Y5rQblaftFZ+fl0qzVzMKMuAMQTKnHAdD9JmVO1jm/ML51LA==~1771687450691",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "bm_s",
+      "value": "YAAQNOTIF0YaTGicAQAAljfNgASfSFsLJH5X1S3GwnSs4uSbE6Bxdg55TdQpQIS3adw7w71lL4m/1zuppB9oO5KJHDyKBHD5nH55mqGSYsPeKgihnfPvQbBundj+I5XYnyqDAJ/TU6EKdcc1oxPlmVY9FHlYROcT3ep5Kvv4XE9za6DU3LhU6dHdFTQLy5yrEbuBZRG9bFdyegMRcQK9NlcPjARtWJ2t8ePwp/AxhiXw8gnAQwDBrxEQKGrNjU1JN6O2bPuFUs9pnQqtTIhFBdVk2+nMEOj0ZYit56P7RsCxiNKRsiDOmDxMuf78Zj6I/srYMVl7AjHas+Dr/iMr2nKv+5506KMKhUKbs9cP4KPs5ujHyPA1gwQwIn2WBG5LVQUBjTxaTku1iKXepz9BkzGpVERn8LdjgEThyWoOgOfxcDFwypiOrZtHEnkWa0mTTK2H4D+Fq6E7W9/j+H4ZDFwDD44eipq2JsGMwiwRbf6i7PxzMvkUIUJtHqBrUB3Ohp7v4pfr/2g7ZJZ5TJ3eTBEK0Qexg9DThAQ75oxTmQvYrIDozJe5Taxi4jw+RDnCWMb3UpHMUCJTQ/x+gsKc6XJcl31jcBH6xGAbG+/8IPpvhEQplVLabVvdnEE1bIfDiIOS1ye7OAYWPf3MUFcuHTMwakgIkbcGVzWEA8xnVXc6zeJNYSW4CwXF5fzF/XyKxWwWvxzopfUVgDFtmxd6Utz13WwoghEsJL0Q2DOkBPgz6cGcJopixudwGWycHOoAcSK5L0dAvszbb6KI8BF1cg==",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "bm_sv",
+      "value": "C7D7B6CF484FAF2C22CF8041D79FA415~YAAQNOTIF0caTGicAQAAljfNgB6Y2vGBY8uv0KaAGrmrdNZR015ppj3CwGnR++E33Vv+m2OtgvOAOQbPturPjxZYmBLwaLhNeXgArrHUqTvNz6z+smMHDz6hgseWLE8Z2Pzg8yp8qBySBTiGoQTMysMYtKBfSEgPdi+BZNUCPuumhdDhjaepzvVkFg+8s6rW9Tx7+Hu77zVSMEaAxKmM/mL7Zfb8xcszqZqhd352lkrrBe5sSrr+rE+x3d+rq2lFUcY=~1",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "bm_sz",
+      "value": "D49CFA26B02C878FC204D475019CA71B~YAAQNOTIF0gaTGicAQAAljfNgB4o58++J6MDTjewWJ7QKGHcJdh8rhre4ufO97sEQZwcBkZm4C9DE0h+fH13Zkz4v5bc7LLluSY39ncIvh+rNtM6qZ1GEv/i+iCfauUbU2PxpCuE31rkBcRCLbJxAxDuSYB+to3G10HYNF/Ja5mDuI9Ii+wPtolPOEUdIJ6K9JupmZ7vxBkMEYzM0VjqslEFSOJEHH5sNpFLRz0vNWhFpn1Pft657hBUd/mdf6z0S3+OhxW5GI2LyImEHCe871K2ZGZmcCncSBRVHN3eDSshjprl2pMVW/w+qXFjTpV8am4NXP/RMeou2ZJT8J7mjhULaDLVx8Xgn12YHRgAclCe5B5ukepARNraj7BSmqNldFRoV014C+2TWdWQjdwN+cQpo1GuVsiPPghW8K4wNXFkVjbI9QlBkdfeGw==~3551545~3684407",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_ga_4WZYL59WMV",
+      "value": "GS2.1.s1771687448$o2$g1$t1771687458$j50$l0$h0",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_dd_s",
+      "value": "aid=c2aebf5e-6ad0-47b9-aba0-b32d972a1e9a&logs=0&expire=1771688358615&rum=0",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "OptanonAlertBoxClosed",
+      "value": "2026-02-21T15:24:18.830Z",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "_abck",
+      "value": "EF8373DCEC7FED5BA5E6456CE2347D35~0~YAAQNOTIF0waTGicAQAAvzrNgA8tzuBpT6i7jNyae+v5dztLr7fshQVB+QHGZ+kuvOrAX2Lid/yRiVEF77XM+2WxkayUgLS87W1omZQfqzAmW+HZj82JBU+CDeCqeopvqb+2xESHLGbkJZfc0g4HWWGWgDz1UKCCp8StGIEwb4Hf8Z5PnbAxIxGh/jMyWKLEPKJhWEZ5mzYK1t/BfqFM2Lcdx12vbFmy4veXPegvkuTTBQIwh9SXX1U6RCzWFV0CiEGs0QIinSm+ZgEN4XDkle3nv7OsJq5+LRfJJDki1+Uq8O65VXGUAMh2Owbtytq0NFwucJoe6+ifz6KV3z+Uwg6COm4xlamMqRcKUHOp5kM0nlMR7xtzL3Q735ngGDV6CwzNcvmhJStZUb9JRpM0IPLukW/05qRI+9MB6BQuTgdSN6/FUwPMHnootFUlK/iJ7idvocbuzuLDROyrrkNe5jCNtl2Is0enzSkiUqP72n/wS6JWBHeCvWHMCCPs2zXWkStF/Ou8hztFeY3di8aQzbUtqssFdjLDHjFFILQD/w1H1j8j2ZYmUfMjazceCKiwNB2NnZ1oXsYSU5md7l1qbTg7O3QQUarYDfCMQQ1kApTnCIWgm85T2s6FQZszuoo+p85Dwof82ycx~-1~-1~-1~AAQAAAAF%2f%2f%2f%2f%2f1vlYdbPvw8Wrj9BUaHVftp3kY7a7OUWHykzoBHdLpsjqHBRKIf9KQGVrw3DZFYUN67pT3I%2fdQ7bWG3dyGD+CvjKmPo1Nbw8Ca7%2f~-1",
+      "domain": ".oreilly.com",
+      "path": "/"
+    },
+    {
+      "name": "OptanonConsent",
+      "value": "isGpcEnabled=0&datestamp=Sat+Feb+21+2026+22%3A24%3A20+GMT%2B0700+(Indochina+Time)&version=202408.1.0&browserGpcFlag=0&isIABGlobal=false&landingPath=NotLandingPage&groups=C0001%3A1%2CC0002%3A1%2CC0003%3A1%2CC0004%3A1&hosts=H29%3A1%2CH32%3A1%2CH27%3A1%2CH28%3A1%2CH6%3A1%2CH3%3A1%2CH69%3A1%2CH34%3A1%2CH23%3A1%2CH82%3A1%2CH30%3A1%2CH14%3A1%2CH15%3A1%2CH17%3A1%2CH4%3A1%2CH21%3A1%2CH24%3A1%2CH26%3A1%2CH62%3A1%2CH106%3A1%2CH63%3A1%2CH41%3A1%2CH88%3A1%2CH1%3A1%2CH7%3A1%2CH8%3A1%2CH9%3A1%2CH96%3A1%2CH39%3A1%2CH60%3A1%2CH10%3A1%2CH11%3A1%2CH12%3A1%2CH97%3A1%2CH13%3A1%2CH89%3A1%2CH71%3A1%2CH72%3A1%2CH74%3A1%2CH75%3A1%2CH31%3A1%2CH16%3A1%2CH77%3A1%2CH57%3A1%2CH18%3A1%2CH19%3A1%2CH80%3A1%2CH33%3A1%2CH104%3A1%2CH22%3A1%2CH45%3A1%2CH40%3A1%2CH100%3A1%2CH53%3A1%2CH83%3A1%2CH25%3A1%2CH84%3A1%2CH86%3A1&genVendors=&AwaitingReconsent=false&geolocation=VN%3B61",
       "domain": ".oreilly.com",
       "path": "/"
     }
   ],
-  "output_dir": "/Users/aaronng/Documents/books"
+  "output_dir": "./output"
 }

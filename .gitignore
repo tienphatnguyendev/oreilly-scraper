@@ -9,3 +9,5 @@ state.json
 .env
 .worktrees/
 build/
+output/
+
