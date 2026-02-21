@@ -1,4 +1,6 @@
 ---
+linear_project_id: b18c97d6-dbeb-4b59-8c08-19a7f7e2bf4b
+---
 
 ## Superpowers Workflow (Agentic Protocol)
 
@@ -11,7 +13,7 @@ The AI agent **MUST** follow this strict sequence of skills for all coding tasks
     *   **Action**: Socratic dialogue (one question at a time).
     *   **Output**: A validated Design Document (`docs/plans/...-design.md`).
     *   **HARD GATE**: You **MUST** have a valid Linear Issue ID before proceeding.
-        *   **Skill**: Use the **Linear MCP** tools via `.gemini/Skills/task-manager` to manage the ticket lifecycle (Status: In Progress, Assignee: Self).
+        *   **Skill**: Use the **Linear MCP** tools via `.gemini/Skills/task-manager` to set the ticket to **In Progress** and assign it to self. **NEVER** set a Linear issue to **Done** manually — that is handled automatically by GitHub when the PR is merged.
 
 2.  **using-git-worktrees**
     *   **Trigger**: After design approval & Linear Issue confirmation.
@@ -36,11 +38,17 @@ The AI agent **MUST** follow this strict sequence of skills for all coding tasks
     *   **Action**: Review implementation against the plan. Critical issues block progress.
 
 6.  **finishing-a-development-branch**
-    *   **Trigger**: When all tasks are complete and verified.
-    *   **Action**: Verify all tests pass, present options (Merge/PR), and clean up the worktree.
+    *   **Trigger**: When all tasks are complete, tests are green, and the branch is pushed.
+    *   **Action**:
+        1.  Verify all tests pass (terminal evidence required).
+        2.  Push the branch to `origin`.
+        3.  Present the **GitHub PR creation link** to the user and ask them to open a Pull Request.
+        4.  **WAIT** — do NOT mark the Linear issue as Done. It will be automatically closed by GitHub when the PR is merged.
+        5.  After the user confirms the PR is merged, clean up the local worktree with `git worktree remove`.
 
 ### Key Protocols
 -   **Debugging**: Follow `systematic-debugging` (Investigate -> Analyze -> Hypothesize -> Fix).
 -   **Verification Gate**: No claim of "fixed" without terminal evidence.
+-   **Linear Status Rule**: Only set a Linear issue to **In Progress**. **NEVER manually set it to Done.** The GitHub ↔ Linear integration handles that automatically when a PR referencing the issue is merged.
 
 ---

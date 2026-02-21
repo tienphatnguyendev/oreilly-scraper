@@ -25,6 +25,5 @@ async def _run(config: Settings):
     page = await create_authenticated_page(config)
     console.print(f"[bold green]Ready![/bold green] Authenticated at [cyan]{page.url}[/cyan]")
 
-
 if __name__ == "__main__":
     main()
