@@ -1,0 +1,12 @@
+{
+  "book_url": "https://learning.oreilly.com/library/view/book-title/book-id/",
+  "cookies": [
+    {
+      "name": "cookie_name",
+      "value": "cookie_value",
+      "domain": ".oreilly.com",
+      "path": "/"
+    }
+  ],
+  "output_dir": "/Users/aaronng/Documents/books"
+}
