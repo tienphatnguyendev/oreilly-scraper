@@ -6,6 +6,7 @@ from pydantic import BaseModel, HttpUrl
 class ChapterStatus(str, Enum):
     PENDING = "pending"
     DOWNLOADED = "downloaded"
+    FAILED = "failed"
 
 class ChapterState(BaseModel):
     url: str

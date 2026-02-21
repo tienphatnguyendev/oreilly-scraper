@@ -1,13 +1,11 @@
-"""TDD tests for browser.py — SOLO-28: Initialize Playwright Stealth & Authentication.
+"""TDD tests for browser.py — Playwright Stealth & Authentication.
 
 All Playwright objects are mocked so no live network calls are made.
 """
-import asyncio
 import json
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch
 
-# Import the module under test at the top level so patch() can find it.
 import oreilly_scraper.browser as browser_module
 from oreilly_scraper.browser import create_authenticated_page, _is_authenticated
 from oreilly_scraper.settings import Settings, Cookie
@@ -48,13 +46,17 @@ def make_mock_browser(context):
     return browser
 
 
-def make_mock_playwright(browser):
-    """Build a mock async_playwright context manager."""
-    p = MagicMock()
-    p.__aenter__ = AsyncMock(return_value=p)
-    p.__aexit__ = AsyncMock(return_value=False)
-    p.chromium.launch = AsyncMock(return_value=browser)
-    return p
+def _patch_playwright(browser):
+    """Create patches for async_playwright().start() -> p, where p.chromium.launch -> browser."""
+    mock_pw = MagicMock()
+    mock_pw.chromium.launch = AsyncMock(return_value=browser)
+    mock_pw.stop = AsyncMock()
+
+    # async_playwright() returns an object with .start()
+    mock_ap = MagicMock()
+    mock_ap.return_value.start = AsyncMock(return_value=mock_pw)
+
+    return mock_ap, mock_pw
 
 
 # ---------------------------------------------------------------------------
@@ -83,10 +85,10 @@ async def test_cookies_are_injected(settings):
     page = make_mock_page("https://learning.oreilly.com/home/")
     context = make_mock_context(page)
     browser = make_mock_browser(context)
-    mock_pw = make_mock_playwright(browser)
+    mock_ap, mock_pw = _patch_playwright(browser)
 
-    with patch.object(browser_module, "async_playwright", return_value=mock_pw), \
-         patch.object(Stealth, "apply_stealth_async", new_callable=AsyncMock) as mock_stealth:
+    with patch.object(browser_module, "async_playwright", mock_ap), \
+         patch.object(Stealth, "apply_stealth_async", new_callable=AsyncMock):
         await create_authenticated_page(settings)
 
     expected = [{"name": "orm", "value": "abc123", "domain": ".oreilly.com", "path": "/"}]
@@ -99,9 +101,9 @@ async def test_stealth_is_applied(settings):
     page = make_mock_page("https://learning.oreilly.com/home/")
     context = make_mock_context(page)
     browser = make_mock_browser(context)
-    mock_pw = make_mock_playwright(browser)
+    mock_ap, mock_pw = _patch_playwright(browser)
 
-    with patch.object(browser_module, "async_playwright", return_value=mock_pw), \
+    with patch.object(browser_module, "async_playwright", mock_ap), \
          patch.object(Stealth, "apply_stealth_async", new_callable=AsyncMock) as mock_stealth:
         await create_authenticated_page(settings)
 
@@ -110,23 +112,25 @@ async def test_stealth_is_applied(settings):
 
 @pytest.mark.asyncio
 async def test_valid_session_returns_page(settings):
-    """When the final URL is the home page, the authenticated page is returned."""
+    """When the final URL is the home page, the tuple (p, browser, page) is returned."""
     page = make_mock_page("https://learning.oreilly.com/home/")
     context = make_mock_context(page)
     browser = make_mock_browser(context)
-    mock_pw = make_mock_playwright(browser)
+    mock_ap, mock_pw = _patch_playwright(browser)
 
-    with patch.object(browser_module, "async_playwright", return_value=mock_pw), \
+    with patch.object(browser_module, "async_playwright", mock_ap), \
          patch.object(Stealth, "apply_stealth_async", new_callable=AsyncMock):
         result = await create_authenticated_page(settings)
 
-    assert result is page
+    p_ret, browser_ret, page_ret = result
+    assert p_ret is mock_pw
+    assert browser_ret is browser
+    assert page_ret is page
 
 
 @pytest.mark.asyncio
 async def test_invalid_session_prompts_and_retries(settings, tmp_path):
     """When the session is invalid, the user is prompted; on retry valid page is returned."""
-    # Write a config.json for the reload path
     config_file = tmp_path / "config.json"
     config_file.write_text(json.dumps({
         "book_url": "https://learning.oreilly.com/library/view/test/1234567890/",
@@ -140,7 +144,7 @@ async def test_invalid_session_prompts_and_retries(settings, tmp_path):
 
     context = make_mock_context(page)
     browser = make_mock_browser(context)
-    mock_pw = make_mock_playwright(browser)
+    mock_ap, mock_pw = _patch_playwright(browser)
 
     # Simulate URL changing to /home/ on the second goto call
     goto_call_count = 0
@@ -158,11 +162,12 @@ async def test_invalid_session_prompts_and_retries(settings, tmp_path):
 
     input_calls = []
 
-    with patch.object(browser_module, "async_playwright", return_value=mock_pw), \
+    with patch.object(browser_module, "async_playwright", mock_ap), \
          patch.object(Stealth, "apply_stealth_async", new_callable=AsyncMock), \
          patch("builtins.input", side_effect=lambda _="": input_calls.append(True) or ""):
         result = await create_authenticated_page(settings, config_path=str(config_file))
 
-    assert result is page
+    _, _, page_ret = result
+    assert page_ret is page
     assert len(input_calls) == 1, "User should have been prompted exactly once"
     assert context.add_cookies.await_count == 2, "Cookies should be re-injected on retry"
