@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+src/oreilly_scraper/__init__.py
+src/oreilly_scraper/__main__.py
+src/oreilly_scraper/settings.py
+src/oreilly_scraper.egg-info/PKG-INFO
+src/oreilly_scraper.egg-info/SOURCES.txt
+src/oreilly_scraper.egg-info/dependency_links.txt
+src/oreilly_scraper.egg-info/entry_points.txt
+src/oreilly_scraper.egg-info/requires.txt
+src/oreilly_scraper.egg-info/top_level.txt
+tests/test_browser.py
