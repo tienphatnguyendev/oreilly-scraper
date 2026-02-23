@@ -158,5 +158,6 @@
       "path": "/"
     }
   ],
-  "output_dir": "./output"
+  "output_dir": "./output",
+  "formats": ["markdown"]
 }

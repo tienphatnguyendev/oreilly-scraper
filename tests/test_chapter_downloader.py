@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from playwright.async_api import TimeoutError as PlaywrightTimeout
 
 from oreilly_scraper.chapter_downloader import ChapterDownloader, MAX_RETRIES
+from oreilly_scraper.exporters import ChapterExporter
 from oreilly_scraper.state import ScrapeState, ChapterState, ChapterStatus
 
 
@@ -26,9 +27,17 @@ def mock_state():
     return ScrapeState(book_url="http://example.com/book", total_chapters=0, chapters=[])
 
 
+class MockExporter(ChapterExporter):
+    async def export(self, page, output_dir, filename_base):
+        return f"{filename_base}.pdf"
+
 @pytest.fixture
-def downloader(mock_page, mock_state, output_dir):
-    return ChapterDownloader(page=mock_page, state=mock_state, output_dir=output_dir)
+def mock_exporters():
+    return [MockExporter()]
+
+@pytest.fixture
+def downloader(mock_page, mock_state, output_dir, mock_exporters):
+    return ChapterDownloader(page=mock_page, state=mock_state, output_dir=output_dir, exporters=mock_exporters)
 
 
 def test_downloader_init(downloader, mock_state, output_dir):
@@ -41,12 +50,10 @@ def test_downloader_init(downloader, mock_state, output_dir):
 @pytest.mark.asyncio
 async def test_download_chapter(downloader, mock_page, output_dir):
     url = "http://example.com/chapter1"
-    filename = "01_chapter.pdf"
-    await downloader.download_chapter(url, filename)
+    filename_base = "01_chapter"
+    saved_paths = await downloader.download_chapter(url, filename_base)
     mock_page.goto.assert_called_once_with(url, wait_until="domcontentloaded")
-    mock_page.add_style_tag.assert_called_once()
-    pdf_path = output_dir / "chapters" / filename
-    mock_page.pdf.assert_called_once_with(path=str(pdf_path))
+    assert saved_paths == ["01_chapter.pdf"]
 
 
 @pytest.mark.asyncio
@@ -62,7 +69,6 @@ async def test_download_all_success(mock_uniform, mock_sleep, downloader, mock_p
     mock_state.total_chapters = 3
     await downloader.download_all()
     assert mock_page.goto.call_count == 3
-    assert mock_page.pdf.call_count == 3
     assert mock_sleep.call_count == 2  # delay between chapters only
     assert all(c.status == ChapterStatus.DOWNLOADED for c in mock_state.chapters)
     assert mock_state.chapters[0].pdf_path == "chapters/chapter_000.pdf"
@@ -80,7 +86,6 @@ async def test_download_all_skips_downloaded(mock_sleep, downloader, mock_page, 
     mock_state.total_chapters = 2
     await downloader.download_all()
     mock_page.goto.assert_called_once_with("http://example.com/2", wait_until="domcontentloaded")
-    mock_page.pdf.assert_called_once_with(path=str(output_dir / "chapters" / "chapter_001.pdf"))
     assert all(c.status == ChapterStatus.DOWNLOADED for c in mock_state.chapters)
     # No sleep expected since download is the last chapter
     mock_sleep.assert_not_called()
@@ -100,10 +105,9 @@ async def test_download_chapter_retries_on_timeout(mock_sleep, downloader, mock_
 
     mock_page.goto.side_effect = flaky_goto
 
-    await downloader.download_chapter("http://example.com/ch1", "chapter_000.pdf")
+    await downloader.download_chapter("http://example.com/ch1", "chapter_000")
 
     assert call_count == 2  # Failed once, then succeeded
-    assert mock_page.pdf.call_count == 1
 
 
 @pytest.mark.asyncio

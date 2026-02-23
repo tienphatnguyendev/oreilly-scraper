@@ -1,6 +1,12 @@
 import json
+from enum import Enum
 from pathlib import Path
 from pydantic import BaseModel, HttpUrl, field_validator
+
+
+class ExportFormat(str, Enum):
+    PDF = "pdf"
+    MARKDOWN = "markdown"
 
 
 class Cookie(BaseModel):
@@ -14,6 +20,14 @@ class Settings(BaseModel):
     book_url: HttpUrl
     cookies: list[Cookie]
     output_dir: Path
+    formats: list[ExportFormat] = [ExportFormat.PDF]
+
+    @field_validator("formats")
+    @classmethod
+    def formats_not_empty(cls, v: list) -> list:
+        if not v:
+            raise ValueError("formats list must not be empty")
+        return list(set(v))  # Remove duplicates if any
 
     @field_validator("cookies")
     @classmethod

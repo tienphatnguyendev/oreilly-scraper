@@ -12,6 +12,7 @@ class ChapterState(BaseModel):
     url: str
     status: ChapterStatus = ChapterStatus.PENDING
     pdf_path: Optional[str] = None
+    markdown_path: Optional[str] = None
 
 class ScrapeState(BaseModel):
     book_url: HttpUrl

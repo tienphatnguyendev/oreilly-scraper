@@ -7,18 +7,21 @@ def test_chapter_state_defaults():
     chapter = ChapterState(url="https://example.com/ch1")
     assert chapter.status == ChapterStatus.PENDING
     assert chapter.pdf_path is None
+    assert chapter.markdown_path is None
+
 
 def test_scrape_state_serialization(tmp_path):
     state_file = tmp_path / "state.json"
     
     chapters = [
         ChapterState(url="https://example.com/ch1", status=ChapterStatus.DOWNLOADED, pdf_path="/tmp/ch1.pdf"),
-        ChapterState(url="https://example.com/ch2")
+        ChapterState(url="https://example.com/ch2", status=ChapterStatus.DOWNLOADED, markdown_path="/tmp/ch2.md"),
+        ChapterState(url="https://example.com/ch3")
     ]
     
     state = ScrapeState(
         book_url="https://example.com/book",
-        total_chapters=2,
+        total_chapters=3,
         chapters=chapters
     )
     
@@ -30,13 +33,18 @@ def test_scrape_state_serialization(tmp_path):
     loaded_state = load_state(state_file)
     
     assert str(loaded_state.book_url).rstrip("/") == "https://example.com/book"
-    assert loaded_state.total_chapters == 2
-    assert len(loaded_state.chapters) == 2
+    assert loaded_state.total_chapters == 3
+    assert len(loaded_state.chapters) == 3
     
     assert loaded_state.chapters[0].status == ChapterStatus.DOWNLOADED
     assert loaded_state.chapters[0].pdf_path == "/tmp/ch1.pdf"
+    assert loaded_state.chapters[0].markdown_path is None
     
-    assert loaded_state.chapters[1].status == ChapterStatus.PENDING
+    assert loaded_state.chapters[1].status == ChapterStatus.DOWNLOADED
+    assert loaded_state.chapters[1].pdf_path is None
+    assert loaded_state.chapters[1].markdown_path == "/tmp/ch2.md"
+
+    assert loaded_state.chapters[2].status == ChapterStatus.PENDING
 
 def test_load_state_not_found(tmp_path):
     with pytest.raises(FileNotFoundError):
