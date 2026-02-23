@@ -3,10 +3,11 @@ import sys
 
 from rich.console import Console
 
-from .settings import load_config, Settings
+from .settings import load_config, Settings, ExportFormat
 from .browser import create_authenticated_page
 from .toc import extract_toc
 from .state import ScrapeState, ChapterState, ChapterStatus, load_state, save_state
+from .exporters import PdfExporter, MarkdownExporter
 
 console = Console()
 
@@ -75,9 +76,17 @@ async def _run(config: Settings):
         console.print("[bold blue]Starting chapter downloads...[/bold blue]")
 
         from .chapter_downloader import ChapterDownloader
+        
+        exporters = []
+        if ExportFormat.PDF in config.formats:
+            exporters.append(PdfExporter())
+        if ExportFormat.MARKDOWN in config.formats:
+            exporters.append(MarkdownExporter())
+            
+        console.print(f"[bold]Active Exporters:[/bold] {', '.join([e.__class__.__name__ for e in exporters])}")
 
         downloader = ChapterDownloader(
-            page=page, state=state, output_dir=config.output_dir
+            page=page, state=state, output_dir=config.output_dir, exporters=exporters
         )
         await downloader.download_all()
 
