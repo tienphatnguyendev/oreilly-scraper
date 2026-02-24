@@ -15,6 +15,8 @@ class MockPage:
         </div>
         """)
         self.add_style_tag = AsyncMock()
+        self.wait_for_selector = AsyncMock()
+        self.wait_for_timeout = AsyncMock()
 
 @pytest.fixture
 def mock_page():
@@ -64,4 +66,5 @@ async def test_markdown_exporter_converts_html_to_markdown(mock_page, tmp_path):
     assert "[Link](https://example.com/link)" in content
     
     # Verify inner_html was called with the correct selector
-    mock_page.inner_html.assert_awaited_once_with('main, article, [class*="contentArea"]')
+    mock_page.wait_for_selector.assert_awaited_once_with('article, [class*="contentSection"], .chapter', timeout=15000)
+    mock_page.inner_html.assert_awaited_once_with('article, [class*="contentSection"], .chapter')
