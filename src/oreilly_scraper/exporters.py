@@ -3,6 +3,9 @@ from pathlib import Path
 from playwright.async_api import Page
 import markdownify
 from bs4 import BeautifulSoup
+from rich.console import Console
+
+console = Console()
 
 class ChapterExporter(ABC):
     @abstractmethod
@@ -101,10 +104,24 @@ class MarkdownExporter(ChapterExporter):
         md_filename = f"{filename_base}.md"
         md_path = output_dir / md_filename
         
-        # Extract the HTML of the main content area
-        # We use the same selectors targeted by the PDF exporter to find the main content
-        content_html = await page.inner_html('main, article, [class*="contentArea"]')
+        # Best selectors found via investigation: article is the semantic container
+        target_selector = 'article, [class*="contentSection"], .chapter'
         
+        try:
+            # Wait for the content to actually appear in the DOM
+            await page.wait_for_selector(target_selector, timeout=15000)
+            # Give a tiny bit more for sub-content if any
+            await page.wait_for_timeout(1000)
+            
+            # Extract HTML
+            content_html = await page.inner_html(target_selector)
+            
+            if not content_html or len(content_html.strip()) < 100:
+                console.print(f"  [yellow]⚠ Content extraction for {filename_base} returned very little data ({len(content_html) if content_html else 0} chars).[/yellow]")
+        except Exception as e:
+            console.print(f"  [red]✗ Failed to find content selector for {filename_base}: {e}[/red]")
+            return ""
+
         # Parse HTML with BeautifulSoup to remove unwanted navigation elements
         soup = BeautifulSoup(content_html, "html.parser")
         for selector in self._EXCLUDE_SELECTORS:
@@ -123,6 +140,9 @@ class MarkdownExporter(ChapterExporter):
             wrap_width=80
         )
         
+        if not md_content or len(md_content.strip()) < 10:
+             console.print(f"  [yellow]⚠ Markdown conversion for {filename_base} resulted in empty content.[/yellow]")
+
         # Save to file
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(md_content)
