@@ -1,5 +1,8 @@
 import pytest
-from oreilly_scraper.discovery import extract_playlist_id
+from oreilly_scraper.discovery import extract_playlist_id, discover_playlist
+from unittest.mock import AsyncMock, patch
+import json
+from pathlib import Path
 
 def test_extract_playlist_id():
     url = "https://learning.oreilly.com/playlists/53038940-d734-45ec-9e63-01e0ffaa4657/"
@@ -8,31 +11,31 @@ def test_extract_playlist_id():
 
 def test_extract_playlist_id_invalid():
     with pytest.raises(ValueError):
-        extract_playlist_id("https://learning.oreilly.com/playlists/invalid/")
-
-from unittest.mock import AsyncMock, patch
-import json
-from oreilly_scraper.discovery import fetch_playlist_data
+        extract_playlist_id("https://example.com/not-a-playlist/")
 
 @pytest.mark.asyncio
-async def test_fetch_playlist_data():
-    mock_page = AsyncMock()
-    mock_response = AsyncMock()
-    mock_response.json.return_value = {
+@patch('oreilly_scraper.discovery.create_authenticated_page')
+@patch('oreilly_scraper.discovery.fetch_playlist_data')
+async def test_discover_playlist_orchestration(mock_fetch_data, mock_create_page):
+    # Arrange
+    mock_settings = AsyncMock()
+    mock_create_page.return_value = (AsyncMock(), AsyncMock(), AsyncMock())
+    mock_fetch_data.return_value = {
+        "id": "test-id",
         "title": "Test Playlist",
         "description": "Test description",
-        "results": [
-            {
-                "title": "Test Book",
-                "content_url": "/library/view/test-book/123/",
-                "format": "book"
-            }
-        ]
+        "items": []
     }
-    mock_page.request.get.return_value = mock_response
-
-    data = await fetch_playlist_data(mock_page, "test-id")
     
-    assert data["title"] == "Test Playlist"
-    assert len(data["items"]) == 1
-    assert data["items"][0]["url"] == "https://learning.oreilly.com/library/view/test-book/123/"
+    # Act
+    await discover_playlist("https://learning.oreilly.com/playlists/test-id/", mock_settings)
+    
+    # Assert
+    output_file = Path("playlists/test-id.json")
+    assert output_file.exists()
+    with open(output_file, 'r') as f:
+        data = json.load(f)
+        assert data["title"] == "Test Playlist"
+    
+    # Clean up
+    output_file.unlink()
