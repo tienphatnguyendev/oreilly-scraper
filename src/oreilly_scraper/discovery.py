@@ -40,13 +40,26 @@ async def fetch_playlist_data(page: Page, playlist_id: str) -> dict:
     page.on("response", handle_response)
 
     console.print(f"Navigating to playlist page: [cyan]{playlist_url}[/cyan]")
-    # Use longer timeout and 'commit' for faster initial response
     await page.goto(playlist_url, wait_until="commit", timeout=60000)
     
     # Wait for the page to settle manually
     await asyncio.sleep(10)
 
-    # Click "Show More Titles" if it appears
+    # Try to get the title and description from the page first
+    actual_title = "Unknown Playlist"
+    actual_description = ""
+    try:
+        title_elem = page.locator("h1")
+        if await title_elem.count() > 0:
+            actual_title = (await title_elem.first.inner_text()).strip()
+            
+        desc_elem = page.locator(".playlist-description, [data-testid='playlist-description'], .description-text")
+        if await desc_elem.count() > 0:
+            actual_description = (await desc_elem.first.inner_text()).strip()
+    except Exception:
+        pass
+
+    # Click "Show More Titles" until it's gone or we've clicked it enough
     for _ in range(5):
         try:
             show_more = page.get_by_role("button", name="Show More Titles")
@@ -62,43 +75,54 @@ async def fetch_playlist_data(page: Page, playlist_id: str) -> dict:
     try:
         # Wait for the API response
         raw_data = await asyncio.wait_for(future, timeout=2.0)
+        
+        cleaned_items = []
+        results = raw_data.get("results", raw_data.get("items", []))
+        
+        for item in results:
+            url_path = item.get("content_url") or item.get("url")
+            if url_path:
+                full_url = url_path if url_path.startswith("http") else f"https://learning.oreilly.com{url_path}"
+                cleaned_items.append({
+                    "title": item.get("title"),
+                    "format": item.get("format"),
+                    "url": full_url,
+                })
+            
+        return {
+            "id": playlist_id,
+            "title": raw_data.get("title", actual_title),
+            "description": raw_data.get("description", actual_description),
+            "items": cleaned_items
+        }
     except asyncio.TimeoutError:
         console.print("[yellow]Interception failed. Scraping from HTML content...[/yellow]")
         content = await page.content()
-        return await _scrape_from_html(content, playlist_id)
-
-    cleaned_items = []
-    results = raw_data.get("results", raw_data.get("items", []))
-    
-    for item in results:
-        url_path = item.get("content_url") or item.get("url")
-        if url_path:
-            full_url = url_path if url_path.startswith("http") else f"https://learning.oreilly.com{url_path}"
-            cleaned_items.append({
-                "title": item.get("title"),
-                "format": item.get("format"),
-                "url": full_url,
-            })
-        
-    return {
-        "id": playlist_id,
-        "title": raw_data.get("title", "Unknown Playlist"),
-        "description": raw_data.get("description", ""),
-        "items": cleaned_items
-    }
+        data = await _scrape_from_html(content, playlist_id)
+        # Use the title/description we found via locators if they are better
+        if actual_title != "Unknown Playlist" and data["title"] == "Discovered from HTML":
+            data["title"] = actual_title
+        data["description"] = actual_description if actual_description else data["description"]
+        return data
 
 async def _scrape_from_html(html: str, playlist_id: str) -> dict:
     """Fallback method to scrape data using regex on the full HTML."""
+    # Try to find title in h1 if not provided
+    title_match = re.search(r'<h1[^>]*>(.*?)</h1>', html, re.IGNORECASE | re.DOTALL)
+    title = title_match.group(1).strip() if title_match else "Discovered from HTML"
+    # Clean tags from title
+    title = re.sub(r'<[^>]*>', '', title)
+
     # Pattern: <a href="/api/v1/continue/9798341630147/" ...>GraphRAG: The Definitive Guide</a>
     matches = re.findall(r'href="/api/v1/continue/(\d+)/"[^>]*>([^<]+)</a>', html)
     
     items = []
     seen_urls = set()
-    for isbn, title in matches:
+    for isbn, item_title in matches:
         full_url = f"https://learning.oreilly.com/library/view/-/{isbn}/"
         if full_url not in seen_urls:
             items.append({
-                "title": title.strip(),
+                "title": item_title.strip(),
                 "format": "book",
                 "url": full_url
             })
@@ -110,8 +134,9 @@ async def _scrape_from_html(html: str, playlist_id: str) -> dict:
         clean_path = path.split("?")[0].rstrip("/")
         full_url = f"https://learning.oreilly.com{clean_path}/"
         if full_url not in seen_urls:
+            item_title = clean_path.split("/")[-2].replace("-", " ").title()
             items.append({
-                "title": clean_path.split("/")[-2].replace("-", " ").title(),
+                "title": item_title,
                 "format": "unknown",
                 "url": full_url
             })
@@ -119,7 +144,7 @@ async def _scrape_from_html(html: str, playlist_id: str) -> dict:
             
     return {
         "id": playlist_id,
-        "title": "Discovered from HTML",
+        "title": title,
         "description": "",
         "items": items
     }
@@ -140,6 +165,9 @@ async def discover_playlist(url: str, settings: Settings):
             json.dump(data, f, indent=2, ensure_ascii=False)
             
         console.print(f"[bold green]Success![/bold green] Playlist exported to [cyan]{output_file}[/cyan]")
+        console.print(f"Playlist Title: [bold]{data['title']}[/bold]")
+        if data['description']:
+            console.print(f"Description: [dim]{data['description']}[/dim]")
         console.print(f"Found [bold]{len(data['items'])}[/bold] items.")
     finally:
         await browser.close()
