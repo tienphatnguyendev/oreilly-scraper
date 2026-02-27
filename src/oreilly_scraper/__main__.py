@@ -45,6 +45,8 @@ def main():
         # Extract book slug from URL
         parts = [p for p in config.book_url.path.split("/") if p]
         book_slug = parts[-2] if len(parts) >= 2 else "book"
+        if book_slug == "-":
+            book_slug = parts[-1]
         config.output_dir = config.output_dir / book_slug
         console.print(f"Loaded config for book: [cyan]{config.book_url}[/cyan]")
         asyncio.run(_run_scrape(config))
@@ -165,6 +167,8 @@ async def _run_scrape_playlist(playlist_path: str, config: Settings):
                 # Extract book slug
                 parts = [part for part in url.split("/") if part]
                 book_slug = parts[-2] if len(parts) >= 2 else f"book_{idx}"
+                if book_slug == "-":
+                    book_slug = parts[-1]
                 
                 # Override config for this book
                 from pydantic import HttpUrl
