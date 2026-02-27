@@ -1,5 +1,14 @@
 # src/oreilly_scraper/discovery.py
 import re
+import json
+import asyncio
+from pathlib import Path
+from playwright.async_api import Page
+from .browser import create_authenticated_page
+from .settings import Settings
+from rich.console import Console
+
+console = Console()
 
 def extract_playlist_id(url: str) -> str:
     """Extracts the UUID playlist ID from an O'Reilly playlist URL."""
@@ -8,37 +17,112 @@ def extract_playlist_id(url: str) -> str:
         raise ValueError(f"Could not extract playlist ID from URL: {url}")
     return match.group(1)
 
-from playwright.async_api import Page
-
 async def fetch_playlist_data(page: Page, playlist_id: str) -> dict:
     """Fetches and cleans playlist data from the O'Reilly internal API."""
-    api_url = f"https://learning.oreilly.com/api/v2/playlists/{playlist_id}/"
-    response = await page.request.get(api_url)
+    playlist_url = f"https://learning.oreilly.com/playlists/{playlist_id}/"
     
-    if not response.ok:
-        raise Exception(f"Failed to fetch playlist data: {response.status}")
-        
-    raw_data = await response.json()
+    # Store the result in a future
+    future = asyncio.get_event_loop().create_future()
+
+    async def handle_response(response):
+        if "/api/" in response.url:
+            try:
+                # O'Reilly sometimes uses different API versions or paths for playlists
+                if playlist_id in response.url and ("playlist" in response.url or "collection" in response.url):
+                    data = await response.json()
+                    if isinstance(data, dict) and ("results" in data or "items" in data or "title" in data):
+                        if not future.done():
+                            console.print(f"[green]Found playlist API: {response.url}[/green]")
+                            future.set_result(data)
+            except Exception:
+                pass
+
+    page.on("response", handle_response)
+
+    console.print(f"Navigating to playlist page: [cyan]{playlist_url}[/cyan]")
+    # Use longer timeout and 'commit' for faster initial response
+    await page.goto(playlist_url, wait_until="commit", timeout=60000)
     
+    # Wait for the page to settle manually
+    await asyncio.sleep(10)
+
+    # Click "Show More Titles" if it appears
+    for _ in range(5):
+        try:
+            show_more = page.get_by_role("button", name="Show More Titles")
+            if await show_more.is_visible(timeout=3000):
+                console.print("Clicking 'Show More Titles'...")
+                await show_more.click()
+                await asyncio.sleep(2)
+            else:
+                break
+        except Exception:
+            break
+
+    try:
+        # Wait for the API response
+        raw_data = await asyncio.wait_for(future, timeout=2.0)
+    except asyncio.TimeoutError:
+        console.print("[yellow]Interception failed. Scraping from HTML content...[/yellow]")
+        content = await page.content()
+        return await _scrape_from_html(content, playlist_id)
+
     cleaned_items = []
-    for item in raw_data.get("results", []):
-        cleaned_items.append({
-            "title": item.get("title"),
-            "format": item.get("format"),
-            "url": f"https://learning.oreilly.com{item.get('content_url')}",
-        })
+    results = raw_data.get("results", raw_data.get("items", []))
+    
+    for item in results:
+        url_path = item.get("content_url") or item.get("url")
+        if url_path:
+            full_url = url_path if url_path.startswith("http") else f"https://learning.oreilly.com{url_path}"
+            cleaned_items.append({
+                "title": item.get("title"),
+                "format": item.get("format"),
+                "url": full_url,
+            })
         
     return {
         "id": playlist_id,
-        "title": raw_data.get("title", ""),
+        "title": raw_data.get("title", "Unknown Playlist"),
         "description": raw_data.get("description", ""),
         "items": cleaned_items
     }
 
-import json
-from pathlib import Path
-from .browser import create_authenticated_page
-from .settings import Settings
+async def _scrape_from_html(html: str, playlist_id: str) -> dict:
+    """Fallback method to scrape data using regex on the full HTML."""
+    # Pattern: <a href="/api/v1/continue/9798341630147/" ...>GraphRAG: The Definitive Guide</a>
+    matches = re.findall(r'href="/api/v1/continue/(\d+)/"[^>]*>([^<]+)</a>', html)
+    
+    items = []
+    seen_urls = set()
+    for isbn, title in matches:
+        full_url = f"https://learning.oreilly.com/library/view/-/{isbn}/"
+        if full_url not in seen_urls:
+            items.append({
+                "title": title.strip(),
+                "format": "book",
+                "url": full_url
+            })
+            seen_urls.add(full_url)
+    
+    # Also look for traditional library/view links just in case
+    lib_matches = re.findall(r'href=["\'](/library/view/[^"\']+)["\']', html)
+    for path in lib_matches:
+        clean_path = path.split("?")[0].rstrip("/")
+        full_url = f"https://learning.oreilly.com{clean_path}/"
+        if full_url not in seen_urls:
+            items.append({
+                "title": clean_path.split("/")[-2].replace("-", " ").title(),
+                "format": "unknown",
+                "url": full_url
+            })
+            seen_urls.add(full_url)
+            
+    return {
+        "id": playlist_id,
+        "title": "Discovered from HTML",
+        "description": "",
+        "items": items
+    }
 
 async def discover_playlist(url: str, settings: Settings):
     """Main entrypoint for discovering a playlist and exporting to JSON."""
@@ -55,7 +139,8 @@ async def discover_playlist(url: str, settings: Settings):
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
             
-        print(f"Playlist exported to {output_file}")
+        console.print(f"[bold green]Success![/bold green] Playlist exported to [cyan]{output_file}[/cyan]")
+        console.print(f"Found [bold]{len(data['items'])}[/bold] items.")
     finally:
         await browser.close()
         await p.stop()
