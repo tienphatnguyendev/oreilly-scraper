@@ -165,10 +165,16 @@ async def _run_scrape_playlist(playlist_path: str, config: Settings):
                 progress.update(playlist_task, description=f"Book {idx+1}/{len(items)}: {title}")
                 
                 # Extract book slug
-                parts = [part for part in url.split("/") if part]
-                book_slug = parts[-2] if len(parts) >= 2 else f"book_{idx}"
-                if book_slug == "-":
-                    book_slug = parts[-1]
+                import re
+                clean_title = re.sub(r'[^\w\s-]', '', title).strip().lower()
+                book_slug = re.sub(r'[-\s]+', '-', clean_title)
+                
+                # Fallback to URL if title is missing or "unknown-title"
+                if not book_slug or book_slug == "unknown-title":
+                    parts = [part for part in url.split("/") if part]
+                    book_slug = parts[-2] if len(parts) >= 2 else f"book_{idx}"
+                    if book_slug == "-":
+                        book_slug = parts[-1]
                 
                 # Override config for this book
                 from pydantic import HttpUrl
