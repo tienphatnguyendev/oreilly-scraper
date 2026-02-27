@@ -21,6 +21,13 @@ A locally-run Python tool designed to download books from O'Reilly Learning as h
 
 ## Setup
 
-1. Check out the python environment.
-2. Provide `config.json` with the target `book_url` and valid `.oreilly.com` cookies.
-3. Run `oreilly-scraper`
+1. Install `uv` (e.g., `brew install uv`).
+2. Run `uv sync` to initialize the virtual environment and dependencies.
+3. Run `uv run playwright install chromium` to fetch browser binaries.
+4. Provide `config.json` with the target `book_url` and valid `.oreilly.com` cookies.
+
+## Usage
+
+- Scrape a single book: `uv run oreilly-scraper scrape`
+- Discover a playlist: `uv run oreilly-scraper discover <url>`
+- Scrape an entire playlist: `uv run oreilly-scraper scrape-playlist playlists/<id>.json`

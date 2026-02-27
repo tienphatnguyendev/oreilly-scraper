@@ -29,17 +29,20 @@ async def extract_toc(page: Page, book_url: str) -> list[str]:
     except Exception:
         pass
 
-    # Extract the book's base path
-    book_path = urlparse(book_url).path.rstrip("/")
+    # The URL might have changed due to redirection (e.g. from /-/ shortened URL to canonical)
+    current_url = page.url
+    
+    # Extract the book ID (the last non-empty segment of the URL)
+    book_id = [p for p in urlparse(current_url).path.split("/") if p][-1]
 
-    # JS-side filtering: only grab hrefs that contain the book path AND end in .html
+    # JS-side filtering: only grab hrefs that contain the book ID AND end in .html
     hrefs = await page.evaluate(
-        """(bookPath) => {
+        """(bookId) => {
         return Array.from(document.querySelectorAll('a.orm-Link-root'))
             .map(a => a.getAttribute('href'))
-            .filter(href => href && href.includes(bookPath) && href.endsWith('.html'))
+            .filter(href => href && href.includes(bookId) && href.endsWith('.html'))
     }""",
-        book_path,
+        book_id,
     )
 
     # Resolve relative URLs to absolute
