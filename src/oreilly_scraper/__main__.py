@@ -65,7 +65,7 @@ async def _run_scrape(config: Settings):
         await p.stop()
 
 
-async def _scrape_single_book(page, config: Settings):
+async def _scrape_single_book(page, config: Settings, progress_manager=None, parent_task=None):
     console.print(f"[bold blue]Extracting Table of Contents for {config.book_url}...[/bold blue]")
     chapter_urls = await extract_toc(page, str(config.book_url))
     console.print(f"[green]Found {len(chapter_urls)} chapters[/green]")
@@ -104,7 +104,7 @@ async def _scrape_single_book(page, config: Settings):
     console.print(f"[bold]Active Exporters:[/bold] {', '.join([e.__class__.__name__ for e in exporters])}")
 
     downloader = ChapterDownloader(page=page, state=state, output_dir=config.output_dir, exporters=exporters)
-    await downloader.download_all()
+    await downloader.download_all(progress_manager=progress_manager, parent_task=parent_task)
 
     failed = sum(1 for c in state.chapters if c.status == ChapterStatus.FAILED)
     if failed:
@@ -144,49 +144,70 @@ async def _run_scrape_playlist(playlist_path: str, config: Settings):
         skip_count = 0
         fail_count = 0
         
-        for idx, item in enumerate(items):
-            url = item.get("url")
-            title = item.get("title", "Unknown Title")
-            console.print(f"\n[bold magenta]=== Book {idx+1}/{len(items)}: {title} ===[/bold magenta]")
+        from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[bold blue]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TextColumn("({task.completed}/{task.total})"),
+            TimeElapsedColumn(),
+            console=console,
+        ) as progress:
+            playlist_task = progress.add_task("Playlist Overall", total=len(items))
             
-            # Extract book slug
-            parts = [part for part in url.split("/") if part]
-            book_slug = parts[-2] if len(parts) >= 2 else f"book_{idx}"
-            
-            # Override config for this book
-            from pydantic import HttpUrl
-            try:
-                book_config = config.model_copy()
-                book_config.book_url = HttpUrl(url)
-                book_config.output_dir = base_output_dir / playlist_id / book_slug
-            except Exception as e:
-                console.print(f"[bold red]Failed to setup config for {url}:[/bold red] {e}")
-                fail_count += 1
-                continue
+            for idx, item in enumerate(items):
+                url = item.get("url")
+                title = item.get("title", "Unknown Title")
+                progress.update(playlist_task, description=f"Book {idx+1}/{len(items)}: {title}")
                 
-            state_path = book_config.output_dir / "state.json"
-            if state_path.exists():
+                # Extract book slug
+                parts = [part for part in url.split("/") if part]
+                book_slug = parts[-2] if len(parts) >= 2 else f"book_{idx}"
+                
+                # Override config for this book
+                from pydantic import HttpUrl
                 try:
-                    state = load_state(state_path)
-                    done = sum(1 for c in state.chapters if c.status == ChapterStatus.DOWNLOADED)
-                    if done == state.total_chapters and state.total_chapters > 0:
-                        console.print(f"[bold green]Skipping - Already fully downloaded.[/bold green]")
-                        skip_count += 1
-                        continue
-                except Exception:
-                    pass # Proceed to scrape if state file is broken
-            
-            try:
-                await _scrape_single_book(page, book_config)
-                success_count += 1
-            except Exception as e:
-                console.print(f"[bold red]Failed to scrape book {title}:[/bold red] {e}")
-                fail_count += 1
-            
-            if idx < len(items) - 1:
-                delay = random.uniform(30.0, 90.0)
-                console.print(f"[dim]Waiting {delay:.1f}s before next book to avoid rate limits...[/dim]")
-                await asyncio.sleep(delay)
+                    book_config = config.model_copy()
+                    book_config.book_url = HttpUrl(url)
+                    book_config.output_dir = base_output_dir / playlist_id / book_slug
+                except Exception as e:
+                    console.print(f"[bold red]Failed to setup config for {url}:[/bold red] {e}")
+                    fail_count += 1
+                    progress.advance(playlist_task)
+                    continue
+                    
+                state_path = book_config.output_dir / "state.json"
+                if state_path.exists():
+                    try:
+                        state = load_state(state_path)
+                        done = sum(1 for c in state.chapters if c.status == ChapterStatus.DOWNLOADED)
+                        if done == state.total_chapters and state.total_chapters > 0:
+                            # Use console.print because we are outside the with block's direct rendering area
+                            # wait, rich Progress manages console output safely.
+                            progress.console.print(f"[bold green]Skipping - Already fully downloaded: {title}[/bold green]")
+                            skip_count += 1
+                            progress.advance(playlist_task)
+                            continue
+                    except Exception:
+                        pass # Proceed to scrape if state file is broken
+                
+                try:
+                    await _scrape_single_book(page, book_config, progress_manager=progress, parent_task=playlist_task)
+                    success_count += 1
+                except Exception as e:
+                    progress.console.print(f"[bold red]Failed to scrape book {title}:[/bold red] {e}")
+                    fail_count += 1
+                
+                progress.advance(playlist_task)
+                
+                if idx < len(items) - 1:
+                    delay = random.uniform(30.0, 90.0)
+                    # We can't really "wait" inside the progress bar without blocking the spinner
+                    # but it's fine for this CLI app.
+                    progress.update(playlist_task, description=f"[dim]Waiting {delay:.0f}s...[/dim]")
+                    await asyncio.sleep(delay)
                 
         console.print(f"\n[bold green]Playlist Run Complete![/bold green]")
         console.print(f"Success: {success_count}, Skipped: {skip_count}, Failed: {fail_count}")

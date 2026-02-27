@@ -54,7 +54,7 @@ class ChapterDownloader:
         # All retries exhausted
         raise last_error  # type: ignore[misc]
 
-    async def download_all(self):
+    async def download_all(self, progress_manager: Progress = None, parent_task=None):
         """Download all pending/failed chapters with a progress bar."""
         total = len(self.state.chapters)
         already_done = sum(
@@ -62,16 +62,27 @@ class ChapterDownloader:
         )
         failed_count = 0
 
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[bold blue]{task.description}"),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            TextColumn("({task.completed}/{task.total})"),
-            TimeElapsedColumn(),
-            console=console,
-        ) as progress:
+        # Create a progress context if none provided
+        if progress_manager is None:
+            progress_context = Progress(
+                SpinnerColumn(),
+                TextColumn("[bold blue]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                TextColumn("({task.completed}/{task.total})"),
+                TimeElapsedColumn(),
+                console=console,
+            )
+        else:
+            # We don't want to close an external manager
+            from contextlib import nullcontext
+            progress_context = nullcontext(progress_manager)
+
+        with progress_context as progress:
             task = progress.add_task("Downloading chapters", total=total, completed=already_done)
+            # Link to parent if provided (requires TaskID)
+            # Note: parent support in rich is via add_task(..., parent=parent_task)
+            # but we'll just use the provided progress instance.
 
             for idx, chapter in enumerate(self.state.chapters):
                 if chapter.status == ChapterStatus.DOWNLOADED:
@@ -92,7 +103,7 @@ class ChapterDownloader:
                 except Exception as exc:
                     chapter.status = ChapterStatus.FAILED
                     failed_count += 1
-                    console.print(
+                    progress.console.print(
                         f"\n  [bold red]✗ Chapter {idx} ({slug}) failed "
                         f"after {MAX_RETRIES} retries: {exc}[/bold red]"
                     )
@@ -106,6 +117,10 @@ class ChapterDownloader:
                 if idx < total - 1:
                     delay = random.uniform(5.0, 15.0)
                     await asyncio.sleep(delay)
+
+        # Cleanup: Remove the nested book task if we're in a playlist
+        if progress_manager is not None:
+            progress_manager.remove_task(task)
 
         # Summary
         downloaded = sum(1 for c in self.state.chapters if c.status == ChapterStatus.DOWNLOADED)
