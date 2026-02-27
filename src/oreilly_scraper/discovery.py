@@ -34,3 +34,28 @@ async def fetch_playlist_data(page: Page, playlist_id: str) -> dict:
         "description": raw_data.get("description", ""),
         "items": cleaned_items
     }
+
+import json
+from pathlib import Path
+from .browser import create_authenticated_page
+from .settings import Settings
+
+async def discover_playlist(url: str, settings: Settings):
+    """Main entrypoint for discovering a playlist and exporting to JSON."""
+    playlist_id = extract_playlist_id(url)
+    
+    p, browser, page = await create_authenticated_page(settings)
+    try:
+        data = await fetch_playlist_data(page, playlist_id)
+        
+        output_dir = Path("playlists")
+        output_dir.mkdir(exist_ok=True)
+        output_file = output_dir / f"{playlist_id}.json"
+        
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+            
+        print(f"Playlist exported to {output_file}")
+    finally:
+        await browser.close()
+        await p.stop()
