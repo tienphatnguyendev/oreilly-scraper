@@ -16,23 +16,22 @@ from oreilly_scraper.discovery import fetch_playlist_data
 @pytest.mark.asyncio
 async def test_fetch_playlist_data():
     mock_page = AsyncMock()
-    mock_response = AsyncMock()
-    mock_response.ok = True
-    mock_response.json.return_value = {
-        "title": "Test Playlist",
-        "description": "Test description",
-        "results": [
-            {
-                "title": "Test Book",
-                "content_url": "/library/view/test-book/123/",
-                "format": "book"
-            }
-        ]
-    }
-    mock_page.request.get.return_value = mock_response
-
+    # Mock content to return a string for regex fallback
+    mock_page.content.return_value = """
+        <a href="/api/v1/continue/12345/">Test Book</a>
+        <a href="/library/view/another-book/67890/">Another Book</a>
+    """
+    
+    # Mock show_more button
+    mock_show_more = AsyncMock()
+    mock_show_more.is_visible.return_value = False
+    mock_page.get_by_role.return_value = mock_show_more
+    
+    # We expect fetch_playlist_data to time out on API interception in this mock 
+    # and fall back to _scrape_from_html which uses the mock_page.content
     data = await fetch_playlist_data(mock_page, "test-id")
     
-    assert data["title"] == "Test Playlist"
-    assert len(data["items"]) == 1
-    assert data["items"][0]["url"] == "https://learning.oreilly.com/library/view/test-book/123/"
+    assert data["id"] == "test-id"
+    assert len(data["items"]) >= 1
+    assert any(item["title"] == "Test Book" for item in data["items"])
+    assert any(item["url"] == "https://learning.oreilly.com/library/view/-/12345/" for item in data["items"])
