@@ -1,6 +1,9 @@
 import asyncio
 import sys
 import argparse
+import json
+import random
+from pathlib import Path
 
 from rich.console import Console
 
@@ -25,6 +28,10 @@ def main():
     discover_parser = subparsers.add_parser("discover", help="Discover a playlist from O'Reilly")
     discover_parser.add_argument("playlist_url", help="The URL of the playlist to discover")
 
+    # Scrape Playlist command
+    playlist_parser = subparsers.add_parser("scrape-playlist", help="Scrape all books in a discovered playlist JSON")
+    playlist_parser.add_argument("playlist_path", help="Path to the discovered playlist JSON file")
+
     args = parser.parse_args()
 
     console.print("[bold green]O'Reilly Scraper[/bold green] initializing...")
@@ -44,57 +51,146 @@ def main():
     elif args.command == "discover":
         console.print(f"Discovering playlist: [cyan]{args.playlist_url}[/cyan]")
         asyncio.run(discover_playlist(args.playlist_url, config))
-
+    elif args.command == "scrape-playlist":
+        console.print(f"Scraping playlist from: [cyan]{args.playlist_path}[/cyan]")
+        asyncio.run(_run_scrape_playlist(args.playlist_path, config))
 
 async def _run_scrape(config: Settings):
     p, browser, page = await create_authenticated_page(config)
     try:
         console.print(f"[bold green]Ready![/bold green] Authenticated at [cyan]{page.url}[/cyan]")
-        console.print("[bold blue]Extracting Table of Contents...[/bold blue]")
-        chapter_urls = await extract_toc(page, str(config.book_url))
-        console.print(f"[green]Found {len(chapter_urls)} chapters[/green]")
+        await _scrape_single_book(page, config)
+    finally:
+        await browser.close()
+        await p.stop()
 
-        config.output_dir.mkdir(parents=True, exist_ok=True)
-        state_path = config.output_dir / "state.json"
 
-        state: ScrapeState
-        if state_path.exists():
-            state = load_state(state_path)
-            existing_urls = [c.url for c in state.chapters]
+async def _scrape_single_book(page, config: Settings):
+    console.print(f"[bold blue]Extracting Table of Contents for {config.book_url}...[/bold blue]")
+    chapter_urls = await extract_toc(page, str(config.book_url))
+    console.print(f"[green]Found {len(chapter_urls)} chapters[/green]")
 
-            if existing_urls != chapter_urls:
-                console.print(f"[yellow]⚠ State mismatch — rebuilding state.[/yellow]")
-                state = _build_state(config, chapter_urls)
-                save_state(state, state_path)
-            else:
-                done = sum(1 for c in state.chapters if c.status == ChapterStatus.DOWNLOADED)
-                console.print(f"[bold yellow]Resuming — {done}/{state.total_chapters} downloaded[/bold yellow]")
-        else:
+    config.output_dir.mkdir(parents=True, exist_ok=True)
+    state_path = config.output_dir / "state.json"
+
+    state: ScrapeState
+    if state_path.exists():
+        state = load_state(state_path)
+        existing_urls = [c.url for c in state.chapters]
+
+        if existing_urls != chapter_urls:
+            console.print(f"[yellow]⚠ State mismatch — rebuilding state.[/yellow]")
             state = _build_state(config, chapter_urls)
             save_state(state, state_path)
-            console.print(f"[bold green]Created state file[/bold green] at {state_path}")
-
-        console.print(f"[bold]Total Chapters:[/bold] {state.total_chapters}")
-        console.print("[bold blue]Starting chapter downloads...[/bold blue]")
-
-        from .chapter_downloader import ChapterDownloader
-        
-        exporters = []
-        if ExportFormat.PDF in config.formats:
-            exporters.append(PdfExporter())
-        if ExportFormat.MARKDOWN in config.formats:
-            exporters.append(MarkdownExporter())
-            
-        console.print(f"[bold]Active Exporters:[/bold] {', '.join([e.__class__.__name__ for e in exporters])}")
-
-        downloader = ChapterDownloader(page=page, state=state, output_dir=config.output_dir, exporters=exporters)
-        await downloader.download_all()
-
-        failed = sum(1 for c in state.chapters if c.status == ChapterStatus.FAILED)
-        if failed:
-            console.print(f"[bold yellow]Finished with {failed} failed chapter(s).[/bold yellow]")
         else:
-            console.print("[bold green]All chapters downloaded successfully![/bold green]")
+            done = sum(1 for c in state.chapters if c.status == ChapterStatus.DOWNLOADED)
+            console.print(f"[bold yellow]Resuming — {done}/{state.total_chapters} downloaded[/bold yellow]")
+    else:
+        state = _build_state(config, chapter_urls)
+        save_state(state, state_path)
+        console.print(f"[bold green]Created state file[/bold green] at {state_path}")
+
+    console.print(f"[bold]Total Chapters:[/bold] {state.total_chapters}")
+    console.print("[bold blue]Starting chapter downloads...[/bold blue]")
+
+    from .chapter_downloader import ChapterDownloader
+    
+    exporters = []
+    if ExportFormat.PDF in config.formats:
+        exporters.append(PdfExporter())
+    if ExportFormat.MARKDOWN in config.formats:
+        exporters.append(MarkdownExporter())
+        
+    console.print(f"[bold]Active Exporters:[/bold] {', '.join([e.__class__.__name__ for e in exporters])}")
+
+    downloader = ChapterDownloader(page=page, state=state, output_dir=config.output_dir, exporters=exporters)
+    await downloader.download_all()
+
+    failed = sum(1 for c in state.chapters if c.status == ChapterStatus.FAILED)
+    if failed:
+        console.print(f"[bold yellow]Finished with {failed} failed chapter(s).[/bold yellow]")
+    else:
+        console.print("[bold green]All chapters downloaded successfully![/bold green]")
+
+
+async def _run_scrape_playlist(playlist_path: str, config: Settings):
+    path = Path(playlist_path)
+    if not path.exists():
+        console.print(f"[bold red]Playlist not found:[/bold red] {playlist_path}")
+        sys.exit(1)
+        
+    with open(path, "r", encoding="utf-8") as f:
+        playlist_data = json.load(f)
+        
+    items = [item for item in playlist_data.get("items", []) if item.get("format") == "book" or "book" in item.get("url", "")]
+    console.print(f"[bold green]Found {len(items)} books in playlist.[/bold green]")
+    
+    if not items:
+        return
+
+    # Enforce Markdown output as requested
+    if ExportFormat.MARKDOWN not in config.formats:
+        console.print("[bold yellow]Warning: Markdown format not in config.json. Adding it for playlist run...[/bold yellow]")
+        config.formats.append(ExportFormat.MARKDOWN)
+
+    base_output_dir = config.output_dir
+    playlist_id = playlist_data.get("id", "playlist")
+    
+    p, browser, page = await create_authenticated_page(config)
+    try:
+        console.print(f"[bold green]Ready![/bold green] Authenticated at [cyan]{page.url}[/cyan]")
+        
+        success_count = 0
+        skip_count = 0
+        fail_count = 0
+        
+        for idx, item in enumerate(items):
+            url = item.get("url")
+            title = item.get("title", "Unknown Title")
+            console.print(f"\n[bold magenta]=== Book {idx+1}/{len(items)}: {title} ===[/bold magenta]")
+            
+            # Extract book slug
+            parts = [part for part in url.split("/") if part]
+            book_slug = parts[-2] if len(parts) >= 2 else f"book_{idx}"
+            
+            # Override config for this book
+            from pydantic import HttpUrl
+            try:
+                book_config = config.model_copy()
+                book_config.book_url = HttpUrl(url)
+                book_config.output_dir = base_output_dir / playlist_id / book_slug
+            except Exception as e:
+                console.print(f"[bold red]Failed to setup config for {url}:[/bold red] {e}")
+                fail_count += 1
+                continue
+                
+            state_path = book_config.output_dir / "state.json"
+            if state_path.exists():
+                try:
+                    state = load_state(state_path)
+                    done = sum(1 for c in state.chapters if c.status == ChapterStatus.DOWNLOADED)
+                    if done == state.total_chapters and state.total_chapters > 0:
+                        console.print(f"[bold green]Skipping - Already fully downloaded.[/bold green]")
+                        skip_count += 1
+                        continue
+                except Exception:
+                    pass # Proceed to scrape if state file is broken
+            
+            try:
+                await _scrape_single_book(page, book_config)
+                success_count += 1
+            except Exception as e:
+                console.print(f"[bold red]Failed to scrape book {title}:[/bold red] {e}")
+                fail_count += 1
+            
+            if idx < len(items) - 1:
+                delay = random.uniform(30.0, 90.0)
+                console.print(f"[dim]Waiting {delay:.1f}s before next book to avoid rate limits...[/dim]")
+                await asyncio.sleep(delay)
+                
+        console.print(f"\n[bold green]Playlist Run Complete![/bold green]")
+        console.print(f"Success: {success_count}, Skipped: {skip_count}, Failed: {fail_count}")
+        
     finally:
         await browser.close()
         await p.stop()
