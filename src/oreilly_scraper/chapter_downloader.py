@@ -31,7 +31,11 @@ class ChapterDownloader:
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                await self.page.goto(url, wait_until="domcontentloaded")
+                response = await self.page.goto(url, wait_until="domcontentloaded")
+                
+                if response is not None and not response.ok:
+                    raise Exception(f"HTTP Error {response.status}: {response.status_text} for {url}")
+                
                 # Wait for content to render
                 await self.page.wait_for_timeout(3000)
                 
@@ -91,7 +95,8 @@ class ChapterDownloader:
                 slug = chapter.url.split("/")[-1]
                 progress.update(task, description=f"[bold blue]Ch {idx}: {slug}")
 
-                filename_base = f"chapter_{idx:03d}"
+                book_name = self.output_dir.name
+                filename_base = f"{book_name}_chapter_{idx:03d}"
                 try:
                     saved_paths = await self.download_chapter(chapter.url, filename_base)
                     chapter.status = ChapterStatus.DOWNLOADED

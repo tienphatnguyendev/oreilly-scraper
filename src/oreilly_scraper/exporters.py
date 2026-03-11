@@ -117,10 +117,9 @@ class MarkdownExporter(ChapterExporter):
             content_html = await page.inner_html(target_selector)
             
             if not content_html or len(content_html.strip()) < 100:
-                console.print(f"  [yellow]⚠ Content extraction for {filename_base} returned very little data ({len(content_html) if content_html else 0} chars).[/yellow]")
+                raise Exception(f"Content extraction for {filename_base} returned very little data ({len(content_html) if content_html else 0} chars).")
         except Exception as e:
-            console.print(f"  [red]✗ Failed to find content selector for {filename_base}: {e}[/red]")
-            return ""
+            raise Exception(f"Failed to extract content for {filename_base}: {e}")
 
         # Parse HTML with BeautifulSoup to remove unwanted navigation elements
         soup = BeautifulSoup(content_html, "html.parser")
@@ -141,7 +140,7 @@ class MarkdownExporter(ChapterExporter):
         )
         
         if not md_content or len(md_content.strip()) < 10:
-             console.print(f"  [yellow]⚠ Markdown conversion for {filename_base} resulted in empty content.[/yellow]")
+             raise Exception(f"Markdown conversion resulted in empty content for {filename_base}.")
 
         # Save to file
         with open(md_path, "w", encoding="utf-8") as f:
