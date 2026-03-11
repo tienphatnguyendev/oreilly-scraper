@@ -41,8 +41,9 @@ def extract_metadata(content_snippet: str, api_key: str) -> MetadataResponse | N
     
     prompt = f"""
     You are a metadata extractor for a RAG system. Analyze the following markdown snippet from a book chapter.
-    Return ONLY a JSON object matching the requested schema. 
-    Do not wrap it in markdown blockticks.
+    Return ONLY a JSON object with exactly these two keys:
+    1. "semantic_filename": A lowercase, kebab-case filename representing the chapter's main topic.
+    2. "chapter_title": The clean, human-readable title of the chapter without any '#' symbols.
     
     Snippet:
     {content_snippet[:2000]}
@@ -53,7 +54,7 @@ def extract_metadata(content_snippet: str, api_key: str) -> MetadataResponse | N
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a helpful assistant that outputs JSON."
+                    "content": "You are a machine that outputs strict JSON with exactly two keys: 'semantic_filename' and 'chapter_title'."
                 },
                 {
                     "role": "user",
@@ -70,6 +71,11 @@ def extract_metadata(content_snippet: str, api_key: str) -> MetadataResponse | N
         return MetadataResponse(**data)
     except Exception as e:
         print(f"Error during LLM extraction: {e}")
+        # print the raw string to debug
+        try:
+             print(f"Raw output: {result_str}")
+        except:
+             pass
         return None
 
 def process_file(file_path: Path, api_key: str, book_title: str):
