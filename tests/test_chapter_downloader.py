@@ -71,9 +71,9 @@ async def test_download_all_success(mock_uniform, mock_sleep, downloader, mock_p
     assert mock_page.goto.call_count == 3
     assert mock_sleep.call_count == 2  # delay between chapters only
     assert all(c.status == ChapterStatus.DOWNLOADED for c in mock_state.chapters)
-    assert mock_state.chapters[0].pdf_path == "chapters/chapter_000.pdf"
-    assert mock_state.chapters[1].pdf_path == "chapters/chapter_001.pdf"
-    assert mock_state.chapters[2].pdf_path == "chapters/chapter_002.pdf"
+    assert mock_state.chapters[0].pdf_path == f"chapters/{output_dir.name}_chapter_000.pdf"
+    assert mock_state.chapters[1].pdf_path == f"chapters/{output_dir.name}_chapter_001.pdf"
+    assert mock_state.chapters[2].pdf_path == f"chapters/{output_dir.name}_chapter_002.pdf"
 
 
 @pytest.mark.asyncio

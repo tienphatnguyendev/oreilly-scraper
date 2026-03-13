@@ -23,6 +23,7 @@ def main():
 
     # Scrape command (default)
     scrape_parser = subparsers.add_parser("scrape", help="Scrape a book from O'Reilly")
+    scrape_parser.add_argument("book_url", nargs="?", help="Optional: Override the book URL in config.json")
 
     # Discover command
     discover_parser = subparsers.add_parser("discover", help="Discover a playlist from O'Reilly")
@@ -42,12 +43,24 @@ def main():
         sys.exit(1)
 
     if args.command == "scrape":
+        # Override book_url if provided
+        if args.book_url:
+            from pydantic import HttpUrl
+            config.book_url = HttpUrl(args.book_url)
+            
         # Extract book slug from URL
         parts = [p for p in config.book_url.path.split("/") if p]
         book_slug = parts[-2] if len(parts) >= 2 else "book"
-        if book_slug == "-":
+        if book_slug == "-" or not book_slug:
             book_slug = parts[-1]
-        config.output_dir = config.output_dir / book_slug
+        
+        # Ensure we have a valid slug
+        if not book_slug or book_slug == "view":
+             book_slug = "book"
+             
+        # Add book slug to output directory
+        base_output_dir = config.output_dir
+        config.output_dir = base_output_dir / book_slug
         console.print(f"Loaded config for book: [cyan]{config.book_url}[/cyan]")
         asyncio.run(_run_scrape(config))
     elif args.command == "discover":

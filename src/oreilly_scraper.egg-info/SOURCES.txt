@@ -4,6 +4,7 @@ src/oreilly_scraper/__init__.py
 src/oreilly_scraper/__main__.py
 src/oreilly_scraper/browser.py
 src/oreilly_scraper/chapter_downloader.py
+src/oreilly_scraper/discovery.py
 src/oreilly_scraper/exporters.py
 src/oreilly_scraper/settings.py
 src/oreilly_scraper/state.py
@@ -16,6 +17,7 @@ src/oreilly_scraper.egg-info/requires.txt
 src/oreilly_scraper.egg-info/top_level.txt
 tests/test_browser.py
 tests/test_chapter_downloader.py
+tests/test_discovery.py
 tests/test_exporters.py
 tests/test_settings.py
 tests/test_state.py

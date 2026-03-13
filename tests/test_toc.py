@@ -12,15 +12,17 @@ async def test_extract_toc_finds_chapters():
     mock_first = AsyncMock()
     mock_locator.first = mock_first
 
-    book_url = "https://learning.oreilly.com/library/view/book/123/"
+    book_url = "https://learning.oreilly.com/library/view/-/123/"
+    mock_page.url = book_url
 
     # page.evaluate returns hrefs filtered by JS
+    # Simulate hrefs containing canonical slug instead of shorthand `/-/`
     mock_page.evaluate = AsyncMock(
         return_value=[
-            "/library/view/book/123/ch01.html",
-            "/library/view/book/123/ch02.html",
-            "https://learning.oreilly.com/library/view/book/123/ch03.html",
-            "/library/view/book/123/ch02.html",  # Duplicate
+            "/library/view/actual-book-title/123/ch01.html",
+            "/library/view/actual-book-title/123/ch02.html",
+            "https://learning.oreilly.com/library/view/actual-book-title/123/ch03.html",
+            "/library/view/actual-book-title/123/ch02.html",  # Duplicate
         ]
     )
 
@@ -34,9 +36,9 @@ async def test_extract_toc_finds_chapters():
 
     # Verify result: absolute, no duplicates, order preserved
     expected = [
-        "https://learning.oreilly.com/library/view/book/123/ch01.html",
-        "https://learning.oreilly.com/library/view/book/123/ch02.html",
-        "https://learning.oreilly.com/library/view/book/123/ch03.html",
+        "https://learning.oreilly.com/library/view/actual-book-title/123/ch01.html",
+        "https://learning.oreilly.com/library/view/actual-book-title/123/ch02.html",
+        "https://learning.oreilly.com/library/view/actual-book-title/123/ch03.html",
     ]
     assert result == expected
 
@@ -49,6 +51,7 @@ async def test_extract_toc_raises_on_empty():
     mock_page.locator = MagicMock(return_value=mock_locator)
     mock_first = AsyncMock()
     mock_locator.first = mock_first
+    mock_page.url = "https://learning.oreilly.com/library/view/book/123/"
 
     mock_page.evaluate = AsyncMock(return_value=[])
 

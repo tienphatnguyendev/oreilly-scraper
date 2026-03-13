@@ -29,21 +29,25 @@ async def extract_toc(page: Page, book_url: str) -> list[str]:
     except Exception:
         pass
 
-    # Extract the book's base path
-    book_path = urlparse(book_url).path.rstrip("/")
+    # The URL might have changed due to redirection (e.g. from /-/ shortened URL to canonical)
+    current_url = page.url
+    
+    # Extract the book's ID (typically the ISBN, which is the last path segment)
+    path_parts = [p for p in urlparse(current_url).path.split("/") if p]
+    book_id = path_parts[-1] if path_parts else ""
 
-    # JS-side filtering: only grab hrefs that contain the book path AND end in .html
+    # JS-side filtering: only grab hrefs that contain the book ID AND end in .html, .xhtml, or .htm
     hrefs = await page.evaluate(
-        """(bookPath) => {
+        """(bookId) => {
         return Array.from(document.querySelectorAll('a.orm-Link-root'))
             .map(a => a.getAttribute('href'))
-            .filter(href => href && href.includes(bookPath) && href.endsWith('.html'))
+            .filter(href => href && href.includes(bookId) && (href.endsWith('.html') || href.endsWith('.xhtml') || href.endsWith('.htm')))
     }""",
-        book_path,
+        book_id,
     )
 
     # Resolve relative URLs to absolute
-    chapter_urls = [urljoin(book_url, href) for href in hrefs]
+    chapter_urls = [urljoin(current_url, href) for href in hrefs]
 
     # Remove duplicates but preserve order
     result = list(dict.fromkeys(chapter_urls))
